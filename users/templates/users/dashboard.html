@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .tab-content {
+            border: 1px solid #ddd;
+            padding: 30px;
+            background-color: #fff;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .nav-tabs .nav-link {
+            font-weight: bold;
+            color: #555;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 5px 5px 0 0;
+        }
+        .custom-tab-panel {
+            width: 95%;
+            height: 95%;
+            max-width: 1200px;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .tab-pane {
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="custom-tab-panel">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#profile" id="profile-tab">Edit Profile</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#users" id="users-tab">User List</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#chats" id="chats-tab">Chat List</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Edit Profile Tab -->
+        <div id="profile" class="container tab-pane active">
+            <h4 class="mt-3">Edit Profile</h4>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label for="first_name">First Name:</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Last Name:</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" class="form-control" id="username" name="username">
+                </div>
+                <div class="form-group">
+                    <label for="mobile_number">Mobile Number:</label>
+                    <input type="tel" class="form-control" id="mobile_number" name="mobile_number">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+
+        <!-- User List Tab -->
+        <div id="users" class="container tab-pane fade">
+            <h4 class="mt-3">User List</h4>
+
+            <!-- Search Bar -->
+            <div class="form-group">
+                <label for="search">Search by Username or Phone Number:</label>
+                <input type="text" class="form-control" id="search" placeholder="Enter username or phone number" />
+            </div>
+
+            <!-- User List Table -->
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Username</th>
+                    <th>Phone Number</th>
+                    <th>Action</th>  <!-- Add button column for chat -->
+                </tr>
+                </thead>
+                <tbody id="user-list">
+                <!-- User data will be populated via API -->
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <nav>
+                <ul class="pagination" id="pagination">
+                    <!-- Pagination links will be populated via API -->
+                </ul>
+            </nav>
+        </div>
+
+        <div id="chats" class="container tab-pane fade">
+            <h4 class="mt-3">Chat List</h4>
+            <table id="chat-list" class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>Chat ID</th>
+                    <th>User 1</th>
+                    <th>User 2</th>
+                    <th>Created At</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Chat data will be populated via API -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+
+        // بارگذاری داده‌های پروفایل کاربر وقتی که تب باز می‌شود
+        $('#profile-tab').on('click', function() {
+            loadUserProfile();
+        });
+
+
+        // تابع برای بارگذاری پروفایل کاربر
+        function loadUserProfile() {
+            $.ajax({
+                url: '/users/profile/',
+                type: 'GET',
+                success: function(data) {
+                    $('#first_name').val(data.first_name);
+                    $('#last_name').val(data.last_name);
+                    $('#username').val(data.username);
+                    $('#mobile_number').val(data.phone_number);
+                },
+                error: function() {
+                    alert('Failed to load user profile');
+                }
+            });
+        }
+
+        // به‌روزرسانی داده‌های پروفایل کاربر
+        $('#profile-form').on('submit', function(e) {
+            e.preventDefault();
+
+            var formData = new FormData(this);
+            $.ajax({
+                url: '/users/profile/',
+                type: 'PUT',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    alert('Profile updated successfully');
+                },
+                error: function(xhr, status, error) {
+                    alert('Error updating profile: ' + error);
+                }
+            });
+        });
+
+        // متغیرهای صفحه و جستجو
+        let currentPage = 1;
+        let searchTerm = '';
+
+        // تابع برای بارگذاری فهرست کاربران
+        function fetchUserList(page = 1, search = '') {
+            $.ajax({
+                url: '/users/list',  // URL API شما
+                type: 'GET',
+                data: {
+                    page: page,
+                    search: search
+                },
+                success: function(response) {
+                    $('#user-list').empty();
+                    $('#pagination').empty();
+
+                    response.results.forEach(function(user) {
+                        $('#user-list').append(`
+                            <tr>
+                                <td>${user.first_name || 'Not Provided'}</td>
+                                <td>${user.last_name || 'Not Provided'}</td>
+                                <td>${user.username || 'Not Provided'}</td>
+                                <td>${user.phone_number}</td>
+                                <td>
+                                    <button class="btn btn-info btn-sm" onclick="createChat(${user.id})">Create Chat</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+
+                    // ایجاد صفحه‌بندی
+                    if (response.previous) {
+                        $('#pagination').append(`
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="fetchUserList(${currentPage - 1}, '${searchTerm}')">Previous</a>
+                            </li>
+                        `);
+                    }
+
+                    for (let i = 1; i <= Math.ceil(response.count / 10); i++) {
+                        $('#pagination').append(`
+                            <li class="page-item ${i === page ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="fetchUserList(${i}, '${searchTerm}')">${i}</a>
+                            </li>
+                        `);
+                    }
+
+                    if (response.next) {
+                        $('#pagination').append(`
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="fetchUserList(${currentPage + 1}, '${searchTerm}')">Next</a>
+                            </li>
+                        `);
+                    }
+                },
+                error: function() {
+                    alert('Failed to load user list');
+                }
+            });
+        }
+
+        // رویداد جستجو
+        $('#search').on('input', function() {
+            searchTerm = $(this).val();
+            fetchUserList(currentPage, searchTerm);
+        });
+
+        // بارگذاری اولیه فهرست کاربران
+        fetchUserList();
+
+        // تابع برای ایجاد چت
+       window.createChat = function(userId) {
+           $.ajax({
+               url: `/chat/create-chat/${userId}/`,
+               type: 'POST',
+               success: function(response) {
+                   alert('Chat created successfully');
+               },
+               error: function() {
+                   alert('Error creating chat');
+               }
+           });
+       }
+
+
+    });
+     $(document).ready(function() {
+        // بارگذاری لیست چت‌ها وقتی که تب چت باز می‌شود
+        $('#chats-tab').on('click', function() {
+            loadChats();
+        });
+
+        // تابع برای بارگذاری لیست چت‌ها
+        function loadChats() {
+            $.ajax({
+                url: '/chat/chat-list',  // URL برای دریافت لیست چت‌ها
+                type: 'GET',
+                success: function(data) {
+                    $('#chat-list tbody').empty();  // پاک کردن چت‌های قبلی
+                    if (data.length === 0) {
+                        $('#chat-list tbody').append('<tr><td colspan="4">No chats available.</td></tr>');
+                    } else {
+                        data.forEach(function(chat) {
+                            // نمایش چت‌ها در جدول
+                            $('#chat-list tbody').append(`
+                                <tr>
+                                    <td>${chat.id}</td>
+                                    <td>${chat.user1}</td>
+                                    <td>${chat.user2}</td>
+                                    <td>${new Date(chat.created_at).toLocaleString()}</td>
+                                </tr>
+                            `);
+                        });
+                    }
+                },
+                error: function() {
+                    alert('Failed to load chat list');
+                }
+            });
+        }
+    });
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+    <!-- Link to a simple CSS file to style the page -->
+    <link rel="stylesheet" href="{% static 'users/css/style.css' %}">
+</head>
+<body>
+    <div class="verify-container">
+        <div class="verify-form">
+            <h2>Verify OTP</h2>
+
+            <form method="POST" action="{% url 'verify-otp' %}">
+                {% csrf_token %}
+
+                <!-- فیلد مخفی برای شماره موبایل -->
+                <input type="hidden" name="phone_number" value="{{ phone_number }}">
+
+                <div class="input-group">
+                    <label for="otp">Enter code</label>
+                    <input type="text" id="otp" name="otp" required placeholder="Enter OTP">
+                </div>
+
+                {% if error_message %}
+                    <div class="error-message">
+                        <p>{{ error_message }}</p>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="submit-btn">Verify OTP</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
