@@ -1,11 +1,16 @@
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from chats.models import Chat
+from chats.models import Chat, Message
 from chats.serializers import ChatSerializer
 # from chats.models import Chat
 from users.models import User
+import json
 
 
 # Create your views here.
@@ -44,3 +49,46 @@ def list_chats(request):
     serializer = ChatSerializer(chats, many=True)
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+# @login_required
+def chat_room(request, room_name):
+    return render(request, 'chats/chat_room.html', {
+        'room_name': room_name
+    })
+
+
+# @login_required
+def get_messages(request, chat_id):
+    chat = Chat.objects.get(id=chat_id)
+    messages = chat.messages.all().order_by('timestamp')  # ترتیب بر اساس زمان
+    message_data = []
+    for message in messages:
+        message_data.append({
+            'sender': message.sender.username,
+            'content': message.content,
+            'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        })
+    return JsonResponse(message_data, safe=False)
+
+@csrf_exempt
+def send_message(request, room_name):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        message_content = data.get('message')
+
+        # دریافت یا ایجاد چت
+        chat = Chat.objects.get(id=room_name)
+
+        # ذخیره پیام
+        message = Message.objects.create(
+            chat=chat,
+            sender=request.user,
+            content=message_content
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": message_content,
+            "sender": request.user.username  # اضافه کردن نام فرستنده
+        })
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
