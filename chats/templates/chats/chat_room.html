@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f7f7f7;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        height: 100vh;
+        align-items: center;
+    }
+
+    #chat-container {
+        width: 60%;  /* تغییر عرض */
+        max-width: 600px;  /* تغییر حداکثر عرض */
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+        overflow-y: auto;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .message {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        font-size: 16px;
+        line-height: 1.5;
+        max-width: 60%;  /* تغییر عرض پیام‌ها */
+    }
+
+    .my-message {
+        background-color: #dcf8c6; /* Green for the user's messages */
+        align-self: flex-end;
+        margin-left: auto;
+    }
+
+    .other-message {
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        align-self: flex-start;
+        margin-right: auto;
+    }
+
+    #message-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        margin-top: 10px;
+        box-sizing: border-box;
+    }
+
+    #send-button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+        border-radius: 20px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    #send-button:hover {
+        background-color: #0056b3;
+    }
+
+    #messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 15px;
+        max-height: calc(100% - 120px);
+    }
+</style></head>
+<body>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <input id="message-input" type="text" placeholder="Type your message..." />
+        <button id="send-button">Send</button>
+    </div>
+
+    <script>
+        const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/public_room/');
+
+        // Load previous messages
+        function loadMessages() {
+            fetch('/chat/{{ room_name }}/messages/')
+                .then(response => response.json())
+                .then(messages => {
+                    messages.forEach(message => {
+                        displayMessage(message.sender, message.content, message.timestamp);
+                    });
+                })
+                .catch(err => console.log('Error loading messages:', err));
+        }
+
+        // On WebSocket open
+        chatSocket.onopen = function(e) {
+            console.log('Chat socket connected');
+        };
+
+        // When receiving a message
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const sender = data.sender;  // Make sure this field is coming correctly
+            const message = data.message;
+            const timestamp = data.timestamp;
+
+            // Display the message
+            displayMessage(sender, message, timestamp);
+        };
+
+        // Function to display the message
+        function displayMessage(sender, message, timestamp) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+
+            // Check if the message is from the current user
+            if (sender === '{{ user.username }}') {
+                messageDiv.classList.add('my-message');
+            } else {
+                messageDiv.classList.add('other-message');
+            }
+
+            messageDiv.innerHTML = `<strong>${sender}</strong>: ${message} <br><small>${timestamp}</small>`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        }
+
+        // Send the message
+        document.getElementById('send-button').onclick = function() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+
+            // Send the message to the API to save in the database
+            fetch('/chat/{{ room_name }}/send_message/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    'message': message,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Send the message to the WebSocket server if saved successfully
+                    chatSocket.send(JSON.stringify({
+                        'message': message,
+                        'sender': '{{ user.username }}',  // Send the sender's username
+                    }));
+
+                    // Clear the input
+                    messageInput.value = '';
+                }
+            })
+            .catch(err => console.log('Error sending message to API:', err));
+        };
+
+        // Load previous messages when the page is loaded
+        window.onload = function() {
+            loadMessages();
+        };
+    </script>
+</body>
+</html>

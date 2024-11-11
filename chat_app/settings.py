@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-glx*p#3hz!qu%87+7^_$c1@8a+v)n_d!4r%^pka)6m94p!%wkf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 STATIC_URL = '/static/'
 
@@ -37,8 +37,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
-
 INSTALLED_APPS = [
+    # 'channels',
+    'daphne',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,17 +49,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'chats',
     'users',
-    'sockets',
-    'channels'
+    'chats'
 ]
 
+
+ASGI_APPLICATION = 'chat_app.asgi.application'
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],  # آدرس و پورت Redis
+            "hosts": [('redis', 6379)],
         },
     },
 }

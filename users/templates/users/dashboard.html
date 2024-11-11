@@ -141,6 +141,7 @@
                     <th>User 1</th>
                     <th>User 2</th>
                     <th>Created At</th>
+                     <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -312,6 +313,9 @@
                                     <td>${chat.user1}</td>
                                     <td>${chat.user2}</td>
                                     <td>${new Date(chat.created_at).toLocaleString()}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="openChatWindow(${chat.id})">Enter Chat</button>
+                                    </td>
                                 </tr>
                             `);
                         });
@@ -322,6 +326,10 @@
                 }
             });
         }
+         window.openChatWindow = function(chatId) {
+             // باز کردن یک تب جدید
+             window.open(`/chat/chat/${chatId}/`, '_blank');
+}
     });
 </script>
 
