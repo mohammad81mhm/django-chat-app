@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from django.shortcuts import render, redirect
@@ -9,11 +9,10 @@ from django.contrib.auth import login, get_user_model
 from .models import User, OTP
 from .serializers import PhoneNumberSerializer, OTPSerializer, UserProfileSerializer, UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, filters
 from rest_framework.decorators import permission_classes
-
 from django.urls import reverse
 
 
@@ -23,8 +22,6 @@ def login_page(request):
 
 @permission_classes([AllowAny])
 class SendOTPView(APIView):
-    # permission_classes = [AllowAny]
-
     def post(self, request):
         serializer = PhoneNumberSerializer(data=request.data)
         if serializer.is_valid():
@@ -44,7 +41,6 @@ class VerifyOTPView(APIView):
         return render(request, 'users/verify_otp.html', {'phone_number': phone_number})
 
     def post(self, request):
-
         phone_number = request.POST.get('phone_number')
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
@@ -63,7 +59,7 @@ class VerifyOTPView(APIView):
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             response = HttpResponseRedirect('/users/dashboard/')
-            response.set_cookie('access_token', access_token, httponly=True, max_age=60 * 60 * 24)
+            response.set_cookie('access_token', access_token, httponly=True, max_age=10 * 60)
             response.set_cookie('refresh_token', str(refresh), httponly=True, max_age=60 * 60 * 24)
             return response
 
@@ -79,7 +75,7 @@ class DashboardView(APIView):
 
 
 class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]  # فقط کاربران وارد شده می‌توانند به این API دسترسی داشته باشند
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
@@ -100,16 +96,16 @@ User = get_user_model()
 
 
 class UserPagination(PageNumberPagination):
-    page_size = 10  # تعداد کاربران در هر صفحه
+    permission_classes = [IsAuthenticated]
+    page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 
 class UserListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [
-        IsAuthenticated]
     pagination_class = UserPagination
 
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -122,6 +118,8 @@ class UserListView(generics.ListAPIView):
 
         search = self.request.GET.get('search', None)
         if search:
-            queryset = queryset.filter(phone_number__icontains=search) | queryset.filter(username__icontains=search)
+            queryset = queryset.filter(
+                Q(phone_number__icontains=search) | Q(username__icontains=search)
+            )
 
         return queryset

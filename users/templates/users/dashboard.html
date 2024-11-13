@@ -56,6 +56,11 @@
         .tab-pane {
             padding-top: 20px;
         }
+        /* کوچک کردن سایز ورودی‌ها */
+        .form-control {
+            width: 30%;  /* اندازه ورودی کمتر */
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -94,7 +99,7 @@
                     <label for="mobile_number">Mobile Number:</label>
                     <input type="tel" class="form-control" id="mobile_number" name="mobile_number">
                 </div>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="submit" class="btn btn-primary " style="width: 150px;">Save Changes</button>
             </form>
         </div>
 
@@ -159,30 +164,36 @@
 <script>
     $(document).ready(function() {
 
-        // بارگذاری داده‌های پروفایل کاربر وقتی که تب باز می‌شود
-        $('#profile-tab').on('click', function() {
-            loadUserProfile();
+        // بارگذاری پروفایل کاربر وقتی که تب پروفایل باز می‌شود
+       $('#profile-tab').on('shown.bs.tab', function() {
+        loadUserProfile();
+    });
+
+    // بارگذاری پروفایل در هنگام بارگذاری صفحه
+    loadUserProfile();
+
+    // تابع برای بارگذاری پروفایل کاربر
+    function loadUserProfile() {
+        $.ajax({
+            url: '/users/profile/',  // آدرس API برای دریافت پروفایل
+            type: 'GET',
+            success: function(data) {
+                $('#first_name').val(data.first_name);
+                $('#last_name').val(data.last_name);
+                $('#username').val(data.username);
+                $('#mobile_number').val(data.phone_number);
+            },
+            error: function() {
+                alert('Failed to load user profile');
+            }
+        });
+    }
+
+        $('#users-tab').on('shown.bs.tab', function() {
+            fetchUserList(currentPage, searchTerm);
         });
 
 
-        // تابع برای بارگذاری پروفایل کاربر
-        function loadUserProfile() {
-            $.ajax({
-                url: '/users/profile/',
-                type: 'GET',
-                success: function(data) {
-                    $('#first_name').val(data.first_name);
-                    $('#last_name').val(data.last_name);
-                    $('#username').val(data.username);
-                    $('#mobile_number').val(data.phone_number);
-                },
-                error: function() {
-                    alert('Failed to load user profile');
-                }
-            });
-        }
-
-        // به‌روزرسانی داده‌های پروفایل کاربر
         $('#profile-form').on('submit', function(e) {
             e.preventDefault();
 
@@ -202,11 +213,9 @@
             });
         });
 
-        // متغیرهای صفحه و جستجو
         let currentPage = 1;
         let searchTerm = '';
 
-        // تابع برای بارگذاری فهرست کاربران
         function fetchUserList(page = 1, search = '') {
             $.ajax({
                 url: '/users/list',  // URL API شما
@@ -233,7 +242,7 @@
                         `);
                     });
 
-                    // ایجاد صفحه‌بندی
+                    // Pagination logic
                     if (response.previous) {
                         $('#pagination').append(`
                             <li class="page-item">
@@ -264,49 +273,26 @@
             });
         }
 
-        // رویداد جستجو
         $('#search').on('input', function() {
             searchTerm = $(this).val();
             fetchUserList(currentPage, searchTerm);
         });
 
-        // بارگذاری اولیه فهرست کاربران
-        fetchUserList();
-
-        // تابع برای ایجاد چت
-       window.createChat = function(userId) {
-           $.ajax({
-               url: `/chat/create-chat/${userId}/`,
-               type: 'POST',
-               success: function(response) {
-                   alert('Chat created successfully');
-               },
-               error: function() {
-                   alert('Error creating chat');
-               }
-           });
-       }
-
-
-    });
-     $(document).ready(function() {
-        // بارگذاری لیست چت‌ها وقتی که تب چت باز می‌شود
+        // Load chat list when Chats tab is shown
         $('#chats-tab').on('click', function() {
             loadChats();
         });
 
-        // تابع برای بارگذاری لیست چت‌ها
         function loadChats() {
             $.ajax({
-                url: '/chat/chat-list',  // URL برای دریافت لیست چت‌ها
+                url: '/chat/chat-list',
                 type: 'GET',
                 success: function(data) {
-                    $('#chat-list tbody').empty();  // پاک کردن چت‌های قبلی
+                    $('#chat-list tbody').empty();
                     if (data.length === 0) {
                         $('#chat-list tbody').append('<tr><td colspan="4">No chats available.</td></tr>');
                     } else {
                         data.forEach(function(chat) {
-                            // نمایش چت‌ها در جدول
                             $('#chat-list tbody').append(`
                                 <tr>
                                     <td>${chat.id}</td>
@@ -326,13 +312,11 @@
                 }
             });
         }
-         window.openChatWindow = function(chatId) {
-             // باز کردن یک تب جدید
-             window.open(`/chat/chat/${chatId}/`, '_blank');
-}
+
+        window.openChatWindow = function(chatId) {
+            window.open(`/chat/chat/${chatId}/`, '_blank');
+        }
     });
 </script>
-
-
 </body>
 </html>
