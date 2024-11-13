@@ -3,37 +3,37 @@ version: '3.8'
 services:
   web:
     build: .
-    container_name: django_chat_app
+    container_name: django
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      - PostgresSql
+      - Redis
     environment:
       - DATABASE_NAME=chat_db
-      - DATABASE_USER=chat_user
-      - DATABASE_PASSWORD=chat_pass
-      - DATABASE_HOST=db
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=123456789
+      - DATABASE_HOST=PostgresSql
       - DATABASE_PORT=5432
 
-  db:
+  PostgresSql:
     image: postgres:13
-    container_name: postgres_db
+    container_name: postgres
     environment:
       POSTGRES_DB: chat_db
-      POSTGRES_USER: chat_user
-      POSTGRES_PASSWORD: chat_pass
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456789
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
-  redis:
+  Redis:
     image: redis:6
-    container_name: redis_cache
+    container_name: redis
     ports:
       - "6379:6379"
 
