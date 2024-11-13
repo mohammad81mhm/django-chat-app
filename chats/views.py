@@ -1,5 +1,6 @@
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
@@ -45,6 +46,7 @@ def create_chat(request, user_id):
     }, status=status.HTTP_201_CREATED)
 
 
+
 @api_view(['GET'])
 def list_chats(request):
     current_user = request.user
@@ -52,17 +54,21 @@ def list_chats(request):
     serializer = ChatSerializer(chats, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# @login_required
+@login_required
 def chat_room(request, room_name):
+    chat = get_object_or_404(Chat, id=room_name)
+    if request.user != chat.user1 and request.user != chat.user2:
+        return HttpResponseForbidden("شما اجازه دسترسی به این چت را ندارید.")
+
     return render(request, 'chats/chat_room.html', {
-        'room_name': room_name
+        'room_name': room_name,
+        'chat': chat
     })
 
-
-# @login_required
+@login_required
 def get_messages(request, chat_id):
     chat = Chat.objects.get(id=chat_id)
-    messages = chat.messages.all().order_by('timestamp')  # ترتیب بر اساس زمان
+    messages = chat.messages.all().order_by('timestamp')
     message_data = []
     for message in messages:
         message_data.append({
@@ -78,10 +84,8 @@ def send_message(request, room_name):
         data = json.loads(request.body)
         message_content = data.get('message')
 
-        # دریافت یا ایجاد چت
         chat = Chat.objects.get(id=room_name)
 
-        # ذخیره پیام
         message = Message.objects.create(
             chat=chat,
             sender=request.user,
@@ -91,6 +95,6 @@ def send_message(request, room_name):
         return JsonResponse({
             "success": True,
             "message": message_content,
-            "sender": request.user.username  # اضافه کردن نام فرستنده
+            "sender": request.user.username
         })
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)

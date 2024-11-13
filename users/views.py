@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
@@ -38,13 +36,14 @@ class SendOTPView(APIView):
 
 @permission_classes([AllowAny])
 class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         phone_number = request.GET.get('phone_number')
         return render(request, 'users/verify_otp.html', {'phone_number': phone_number})
 
     def post(self, request):
         phone_number = request.POST.get('phone_number')
-        pprint(request)
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
             otp = serializer.validated_data['otp']
@@ -104,11 +103,10 @@ class UserPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-
+@permission_classes([AllowAny])
 class UserListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     queryset = User.objects.all()
-
     serializer_class = UserSerializer
     pagination_class = UserPagination
 
@@ -118,12 +116,15 @@ class UserListView(generics.ListAPIView):
     ordering = ['username']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
-        search = self.request.GET.get('search', None)
-        if search:
+        queryset = User.objects.all()
+        search_term = self.request.query_params.get('search', '')
+        if search_term:
             queryset = queryset.filter(
-                Q(phone_number__icontains=search) | Q(username__icontains=search)
+                Q(phone_number__icontains=search_term) |
+                Q(username__icontains=search_term)
             )
+        ordering = self.request.query_params.get('ordering', '')
+        if ordering:
+            queryset = queryset.order_by(ordering)
 
         return queryset

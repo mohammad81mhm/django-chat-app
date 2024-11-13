@@ -100,20 +100,18 @@
                 .catch(err => console.log('Error loading messages:', err));
         }
 
-        // On WebSocket open
         chatSocket.onopen = function(e) {
             console.log('Chat socket connected');
         };
 
-        // When receiving a message
         chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            const sender = data.sender;  // Make sure this field is coming correctly
-            const message = data.message;
-            const timestamp = data.timestamp;
 
-            // Display the message
-            displayMessage(sender, message, timestamp);
+            const data = JSON.parse(e.data);
+            const sender = data.sender;
+            const message = data.message;
+            {#const timestamp = data.timestamp;#}
+
+            displayMessage(sender, message);
         };
 
         // Function to display the message
@@ -152,13 +150,10 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Send the message to the WebSocket server if saved successfully
                     chatSocket.send(JSON.stringify({
                         'message': message,
                         'sender': '{{ user.username }}',  // Send the sender's username
                     }));
-
-                    // Clear the input
                     messageInput.value = '';
                 }
             })

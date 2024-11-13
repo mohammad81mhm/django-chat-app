@@ -56,9 +56,8 @@
         .tab-pane {
             padding-top: 20px;
         }
-        /* کوچک کردن سایز ورودی‌ها */
         .form-control {
-            width: 30%;  /* اندازه ورودی کمتر */
+            width: 30%;
             margin: 10px 0;
         }
     </style>
@@ -146,7 +145,7 @@
                     <th>User 1</th>
                     <th>User 2</th>
                     <th>Created At</th>
-                     <th>Action</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -163,15 +162,13 @@
 
 <script>
     $(document).ready(function() {
-        // بارگذاری پروفایل کاربر وقتی که تب پروفایل باز می‌شود
+
         $('#profile-tab').on('shown.bs.tab', function() {
             loadUserProfile();
         });
 
-        // بارگذاری پروفایل در هنگام بارگذاری صفحه
         loadUserProfile();
 
-        // تابع برای بارگذاری پروفایل کاربر
         function loadUserProfile() {
             $.ajax({
                 url: '/users/profile/',  // آدرس API برای دریافت پروفایل
@@ -185,10 +182,10 @@
             });
         }
 
-        // بارگذاری لیست کاربران
         $('#users-tab').on('shown.bs.tab', function() {
             fetchUserList(currentPage, searchTerm);
         });
+
 
         $('#profile-form').on('submit', function(e) {
             e.preventDefault();
@@ -209,17 +206,18 @@
             });
         });
 
-        // Pagination و جستجوی کاربران
         let currentPage = 1;
         let searchTerm = '';
+        let pageSize = 5;
 
         function fetchUserList(page = 1, search = '') {
             $.ajax({
-                url: '/users/list',  // URL API شما
+                url: '/users/list',
                 type: 'GET',
                 data: {
                     page: page,
-                    search: search
+                    search: search,
+                    page_size: pageSize
                 },
                 success: function(response) {
                     $('#user-list').empty();
@@ -227,56 +225,66 @@
 
                     response.results.forEach(function(user) {
                         $('#user-list').append(`
-                            <tr>
-                                <td>${user.first_name || 'Not Provided'}</td>
-                                <td>${user.last_name || 'Not Provided'}</td>
-                                <td>${user.username || 'Not Provided'}</td>
-                                <td>${user.phone_number}</td>
-                                <td>
-                                    <button class="btn btn-info btn-sm" onclick="createChat(${user.id})">Create Chat</button>
-                                </td>
-                            </tr>
-                        `);
+                        <tr>
+                            <td>${user.first_name || 'Not Provided'}</td>
+                            <td>${user.last_name || 'Not Provided'}</td>
+                            <td>${user.username || 'Not Provided'}</td>
+                            <td>${user.phone_number}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm" onclick="createChat(${user.id})">Create Chat</button>
+                            </td>
+                        </tr>
+                    `);
                     });
-
-                    // Pagination logic
+                    let totalPages = Math.ceil(response.count / pageSize);
                     if (response.previous) {
                         $('#pagination').append(`
-                            <li class="page-item">
-                                <a class="page-link" href="#" onclick="fetchUserList(${currentPage - 1}, '${searchTerm}')">Previous</a>
-                            </li>
-                        `);
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="fetchUserList(${currentPage - 1}, '${searchTerm}')">Previous</a>
+                        </li>
+                    `);
                     }
 
-                    for (let i = 1; i <= Math.ceil(response.count / 10); i++) {
+                    for (let i = 1; i <= totalPages; i++) {
                         $('#pagination').append(`
-                            <li class="page-item ${i === page ? 'active' : ''}">
-                                <a class="page-link" href="#" onclick="fetchUserList(${i}, '${searchTerm}')">${i}</a>
-                            </li>
-                        `);
+                        <li class="page-item ${i === page ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="fetchUserList(${i}, '${searchTerm}')">${i}</a>
+                        </li>
+                    `);
                     }
 
                     if (response.next) {
                         $('#pagination').append(`
-                            <li class="page-item">
-                                <a class="page-link" href="#" onclick="fetchUserList(${currentPage + 1}, '${searchTerm}')">Next</a>
-                            </li>
-                        `);
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="fetchUserList(${currentPage + 1}, '${searchTerm}')">Next</a>
+                        </li>
+                    `);
                     }
-                },
-                error: function() {
-                    alert('Failed to load user list');
                 }
             });
         }
 
-        // جستجو در لیست کاربران
+
         $('#search').on('input', function() {
             searchTerm = $(this).val();
             fetchUserList(currentPage, searchTerm);
         });
 
-        // بارگذاری لیست چت‌ها وقتی تب چت‌ها باز می‌شود
+
+        $('#users-tab').on('shown.bs.tab', function() {
+            fetchUserList(currentPage, searchTerm);
+        });
+
+
+        $('#pagination').on('click', '.page-link', function(e) {
+            e.preventDefault();
+            currentPage = parseInt($(this).text());
+            fetchUserList(currentPage, searchTerm);
+        });
+
+
+        fetchUserList(currentPage, searchTerm);
+
         $('#chats-tab').on('click', function() {
             loadChats();
         });
@@ -312,22 +320,21 @@
             window.open(`/chat/chat/${chatId}/`, '_blank');
         }
 
-        // ایجاد چت جدید
-        window.createChat = function(userId) {
-            $.ajax({
-                url: `/chat/create-chat/${userId}/`,  // افزودن user_id به URL
-                type: 'POST',
-                success: function(response) {
-                    alert(response.message);
-                    loadChats();  // بارگذاری مجدد لیست چت‌ها پس از ایجاد چت جدید
-                },
-                error: function(xhr, status, error) {
-                    let errorMessage = xhr.responseJSON ? xhr.responseJSON.error : error;
-                    alert('Error creating chat: ' + errorMessage);
-                }
-            });
-        };
     });
+    function createChat(userId) {
+        $.ajax({
+            url: `/chat/create-chat/${userId}/`,
+            type: 'POST',
+            success: function(response) {
+                alert(response.message);
+                loadChats();
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = xhr.responseJSON ? xhr.responseJSON.error : error;
+                alert('Error creating chat: ' + errorMessage);
+            }
+        });
+    }
 </script>
 </body>
 </html>
