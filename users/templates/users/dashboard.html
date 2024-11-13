@@ -163,36 +163,32 @@
 
 <script>
     $(document).ready(function() {
-
         // بارگذاری پروفایل کاربر وقتی که تب پروفایل باز می‌شود
-       $('#profile-tab').on('shown.bs.tab', function() {
-        loadUserProfile();
-    });
-
-    // بارگذاری پروفایل در هنگام بارگذاری صفحه
-    loadUserProfile();
-
-    // تابع برای بارگذاری پروفایل کاربر
-    function loadUserProfile() {
-        $.ajax({
-            url: '/users/profile/',  // آدرس API برای دریافت پروفایل
-            type: 'GET',
-            success: function(data) {
-                $('#first_name').val(data.first_name);
-                $('#last_name').val(data.last_name);
-                $('#username').val(data.username);
-                $('#mobile_number').val(data.phone_number);
-            },
-            error: function() {
-                alert('Failed to load user profile');
-            }
+        $('#profile-tab').on('shown.bs.tab', function() {
+            loadUserProfile();
         });
-    }
 
+        // بارگذاری پروفایل در هنگام بارگذاری صفحه
+        loadUserProfile();
+
+        // تابع برای بارگذاری پروفایل کاربر
+        function loadUserProfile() {
+            $.ajax({
+                url: '/users/profile/',  // آدرس API برای دریافت پروفایل
+                type: 'GET',
+                success: function(data) {
+                    $('#first_name').val(data.first_name);
+                    $('#last_name').val(data.last_name);
+                    $('#username').val(data.username);
+                    $('#mobile_number').val(data.phone_number);
+                }
+            });
+        }
+
+        // بارگذاری لیست کاربران
         $('#users-tab').on('shown.bs.tab', function() {
             fetchUserList(currentPage, searchTerm);
         });
-
 
         $('#profile-form').on('submit', function(e) {
             e.preventDefault();
@@ -213,6 +209,7 @@
             });
         });
 
+        // Pagination و جستجوی کاربران
         let currentPage = 1;
         let searchTerm = '';
 
@@ -273,12 +270,13 @@
             });
         }
 
+        // جستجو در لیست کاربران
         $('#search').on('input', function() {
             searchTerm = $(this).val();
             fetchUserList(currentPage, searchTerm);
         });
 
-        // Load chat list when Chats tab is shown
+        // بارگذاری لیست چت‌ها وقتی تب چت‌ها باز می‌شود
         $('#chats-tab').on('click', function() {
             loadChats();
         });
@@ -306,9 +304,6 @@
                             `);
                         });
                     }
-                },
-                error: function() {
-                    alert('Failed to load chat list');
                 }
             });
         }
@@ -316,6 +311,22 @@
         window.openChatWindow = function(chatId) {
             window.open(`/chat/chat/${chatId}/`, '_blank');
         }
+
+        // ایجاد چت جدید
+        window.createChat = function(userId) {
+            $.ajax({
+                url: `/chat/create-chat/${userId}/`,  // افزودن user_id به URL
+                type: 'POST',
+                success: function(response) {
+                    alert(response.message);
+                    loadChats();  // بارگذاری مجدد لیست چت‌ها پس از ایجاد چت جدید
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = xhr.responseJSON ? xhr.responseJSON.error : error;
+                    alert('Error creating chat: ' + errorMessage);
+                }
+            });
+        };
     });
 </script>
 </body>

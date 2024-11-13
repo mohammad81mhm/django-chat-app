@@ -5,13 +5,7 @@ import re
 
 
 class PhoneNumberSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(
-        max_length=11,
-        min_length=11,
-        validators=[
-            MaxLengthValidator(11),
-        ]
-    )
+    phone_number = serializers.CharField(max_length=11, min_length=11)
 
     def validate_phone_number(self, value):
         if not re.match(r'^\d{11}$', value):
@@ -21,12 +15,18 @@ class PhoneNumberSerializer(serializers.Serializer):
 
 class OTPSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
+    phone_number = serializers.CharField(max_length=11, min_length=11)
+
+    def validate_phone_number(self, value):
+        if not re.match(r'^\d{11}$', value):
+            raise serializers.ValidationError("Phone number must be 11 digits.")
+        return value
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'phone_number', 'profile_picture' , 'username']
+        fields = ['first_name', 'last_name', 'phone_number', 'profile_picture', 'username']
 
     def update(self, instance, validated_data):
         profile_picture = validated_data.get('profile_picture', None)

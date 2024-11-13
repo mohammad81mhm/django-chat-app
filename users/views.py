@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
@@ -14,7 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, filters
 from rest_framework.decorators import permission_classes
 from django.urls import reverse
-
+import pdb
 
 def login_page(request):
     return render(request, 'users/login.html')
@@ -42,6 +44,7 @@ class VerifyOTPView(APIView):
 
     def post(self, request):
         phone_number = request.POST.get('phone_number')
+        pprint(request)
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
             otp = serializer.validated_data['otp']
@@ -105,6 +108,7 @@ class UserPagination(PageNumberPagination):
 class UserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
+
     serializer_class = UserSerializer
     pagination_class = UserPagination
 
